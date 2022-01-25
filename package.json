@@ -8,6 +8,7 @@
     "csvtojson": "^2.0.10",
     "express": "^4.17.2",
     "express-fileupload": "^1.2.1",
+    "node-bigcommerce": "^4.1.0",
     "nodemon": "^2.0.15"
   },
   "devDependencies": {},

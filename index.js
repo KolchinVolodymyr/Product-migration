@@ -1,8 +1,16 @@
 const express = require("express");
 const upload = require("express-fileupload");
 const csv = require('csvtojson');
-const csvWriter = require('csv-write-stream');
-const fs = require('fs');
+
+const BigCommerce = require('node-bigcommerce');
+
+const bigCommerce = new BigCommerce({
+    clientId: 'k774mcmpeu75ert9zrha24gvsbswj1y',
+    accessToken: '86fxqoc9f8q6psha1sc0xaf6s2wgjyv',
+    storeHash: '85kzbf18qd',
+    responseType: 'json',
+    apiVersion: 'v3' // Default is v2
+});
 
 const app = express();
 app.use(upload({useTempFiles: true}));
@@ -15,86 +23,108 @@ app.post('/', (req, res) =>{
     if(req.files) {
         const data = [];
         let getProducts =
-        csv()
-            .fromFile(req.files.file.tempFilePath)
-            .then((jsonObj) => {
-                var combinedItems = jsonObj.reduce(function(arr, item, index) {
-                var found = false;
-//                    console.log('arr[i].Handle', item.Handle);
-                for (var i = 0; i < arr.length; i++) {
-                    if (arr[i].Handle === item.Handle) {
-//                        console.log('arr[i]', arr[i].Title);
-                        found = true;
-                        arr[i].count++;
-                         console.log('arr[i]', arr[i].arr)
-                         console.log('arr[i]', arr[i].Title)
-                        arr[i].arr.push({
-                            'Variant Inventory Qty': item['Variant Inventory Qty']
-                        })
-                    }
-                }
-                if (!found) {
-                    item.arr = [{
-                        'Variant Inventory Qty': item['Variant Inventory Qty']
-                    }]
-                    item.count = 1;
-                    arr.push(item);
-                    data.push(arr[i]);
-                }
+            csv()
+                .fromFile(req.files.file.tempFilePath)
+                .then((jsonObj) => {
+//                console.log('jsonObj', jsonObj);
 
-                arr.push(item);
-                return arr;
-                }, [])
+                    var combinedItems = jsonObj.reduce(function(arr, item, index) {
+                        var found = false;
 
-            });
+                        for (var i = 0; i < arr.length; i++) {
+                            // console.log('item.Email', item.Email)
+                            // if(item.Email === '') {
+                            //
+                            //     console.log('no Email')
+                            //     console.log('item.Email', JSON.stringify(item));
+                            //     logger.info(`Request returned error code:${JSON.stringify(item)}`);
+                            //     return ;
+                            // }
+                            if (arr[i].Handle === item.Handle) {
+                                found = true;
+                                arr[i].count++;
+                                // console.log('arr[i].option_display_name', arr[i].option_display_name)
+                                arr[i].variants.push({
+                                    'sku': item['Variant SKU'],
+                                    'option_values': [{
+                                        'option_display_name': arr[i].option_display_name,
+                                        'label': item['Option1 Value']
+                                    }]
+                                })
+                            }
+                        }
 
+                        if (!found) {
+                            item.variants = [{
+                                'sku': item['Variant SKU'],
+                                'option_values': [{
+                                    'option_display_name': item['Option1 Name'],
+                                    'label': item['Option1 Value']
+                                }]
+                            }];
+                            item.count = 1;
+                            item.option_display_name = item['Option1 Name'];
+                            arr.push(item);
+                            data.push(arr[i]);
+                        }
+
+                        return arr;
+                    }, [])
+                });
+        /*pruductsBigCommerce arr*/
+        let productsBigCommerce = [];
         Promise.all([getProducts]).then(() => {
-        console.log('data', data)
-            const writerExport = csvWriter({})
+            data.forEach((element)=>{
+                if(element.count > 1) {
+                    productsBigCommerce.push({
+                        'name': element['Title'],
+                        'price': element['Variant Price'],
+                        'weight': element['Variant Grams'],
+                        'type': 'physical',
+                        'variants': element['variants']
+                    })
+                } else {
+                    productsBigCommerce.push({
+                        'name': element['Title'],
+                        'price': element['Variant Price'],
+                        'weight': element['Variant Grams'],
+                        'type': 'physical'
+                    })
+                }
+            })
+            //
+            console.log('productsBigCommerce', productsBigCommerce);
+           // console.log('changeArray', changeArray);
 
-//            writerExport.pipe(fs.createWriteStream('neworders.csv'));
 
-//            data.map((i)=>{
-//                let count = 0;
-//                i.arr.map((a, index)=>{
-//                    index++;
-//                    count++;
-//                    // loop over keys and values
-//                    Object.entries(a).forEach(([key, value]) => {
-//                         i[`${key} - ${index}`] = value;
-//                    });
-//
-//                });
-//                // console.log('count', count);
-//                delete i.arr;
-//            });
-
-
-//            /*Change arr*/
-//            var changeArray = data.map((item, index) => ({
-//                'First Name': item['First Name'],
-//                'Last Name': item['Last Name'],
-//                'Email Address': item['Email'],
-//                'Company': item['Company'],
-//                'Phone': item['Phone'],
-//                'Notes': item['Note']
-//
-//            }))
-//
-//            /*Write CSV*/
-//            data.map((el)=>{
-//                writerExport.write(el);
-//            })
-
-        });
+        }).then((value)=>{
+            // console.log('productsBigCommerce', productsBigCommerce);
+            productsBigCommerce.map((lineItem)=>{
+                // console.log('line', lineItem);
+                bigCommerce.post(`/catalog/products`, lineItem)
+                    .then((data) => {
+                        console.log('data order', data);
+                    })
+            })
+            // let lineItem = {
+            //     "name": "BigCommerce Coffee Mug222",
+            //     "price": "10.00",
+            //     "weight": 4,
+            //     "type": "physical"
+            // }
+            // bigCommerce.post(`/catalog/products`, lineItem)
+            //     .then((data) => {
+            //         console.log('data order', data);
+            //     })
+        })
     }
     res.sendFile(__dirname + '/completion.html');
 })
 
 app.get('/download', function (req, res, next) {
-    res.download(__dirname + '/neworders.csv', 'neworders.csv');
+    res.download(__dirname + '/newCustomer.csv', 'newCustomer.csv');
 });
 
 app.listen(3000 || process.env.PORT, () => {
-  console.log("Server on...");
+    console.log("Server on...");
 })
