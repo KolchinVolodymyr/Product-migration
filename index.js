@@ -20,22 +20,23 @@ app.post('/', (req, res) =>{
             .then((jsonObj) => {
                 var combinedItems = jsonObj.reduce(function(arr, item, index) {
                 var found = false;
-                    console.log('arr[i].Handle', item.Handle);
+//                    console.log('arr[i].Handle', item.Handle);
                 for (var i = 0; i < arr.length; i++) {
                     if (arr[i].Handle === item.Handle) {
 //                        console.log('arr[i]', arr[i].Title);
                         found = true;
-//                        arr[i].count++;
-//                        console.log('arr[i]', arr[i])
-//                        arr[i].arr.push({
-//                            'Variant SKU': item['Variant SKU']
-//                        })
+                        arr[i].count++;
+                         console.log('arr[i]', arr[i].arr)
+                         console.log('arr[i]', arr[i].Title)
+                        arr[i].arr.push({
+                            'Variant Inventory Qty': item['Variant Inventory Qty']
+                        })
                     }
                 }
                 if (!found) {
-//                    item.arr = [{
-//                        'sku': item['Variant SKU'],
-//                    }]
+                    item.arr = [{
+                        'Variant Inventory Qty': item['Variant Inventory Qty']
+                    }]
                     item.count = 1;
                     arr.push(item);
                     data.push(arr[i]);
