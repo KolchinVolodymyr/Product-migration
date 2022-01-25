@@ -18,84 +18,72 @@ app.post('/', (req, res) =>{
         csv()
             .fromFile(req.files.file.tempFilePath)
             .then((jsonObj) => {
-//                console.log('jsonObj', jsonObj);
-
-        var combinedItems = jsonObj.reduce(function(arr, item, index) {
-            var found = false;
-
-            for (var i = 0; i < arr.length; i++) {
-                if (arr[i].Email === item.Email) {
-                    found = true;
-//                    arr[i].count++;
-                    arr[i].arr.push({
-                        'Address Line 1': item.Address1,
-                        'Address Line 2': item.Address2,
-                        'Address Company': item.Company,
-                        'Address City': item.City,
-                        'Address Zip': item.Zip,
-                        'Address Country': item.Country,
-                        'Address Phone': item.Phone,
-                    })
+                var combinedItems = jsonObj.reduce(function(arr, item, index) {
+                var found = false;
+                    console.log('arr[i].Handle', item.Handle);
+                for (var i = 0; i < arr.length; i++) {
+                    if (arr[i].Handle === item.Handle) {
+//                        console.log('arr[i]', arr[i].Title);
+                        found = true;
+//                        arr[i].count++;
+//                        console.log('arr[i]', arr[i])
+//                        arr[i].arr.push({
+//                            'Variant SKU': item['Variant SKU']
+//                        })
+                    }
                 }
-            }
-
-            if (!found) {
-                item.arr = [{
-                    'Address Line 1': item.Address1,
-                    'Address Line 2': item.Address2,
-                    'Address Company': item.Company,
-                    'Address City': item.City,
-                    'Address Zip': item.Zip,
-                    'Address Country': item.Country,
-                    'Address Phone': item.Phone,
-                }];
-//                item.count = 1;
+                if (!found) {
+//                    item.arr = [{
+//                        'sku': item['Variant SKU'],
+//                    }]
+                    item.count = 1;
+                    arr.push(item);
+                    data.push(arr[i]);
+                }
 
                 arr.push(item);
-                data.push(arr[i]);
-            }
-
-            return arr;
-        }, [])
+                return arr;
+                }, [])
 
             });
 
         Promise.all([getProducts]).then(() => {
+        console.log('data', data)
             const writerExport = csvWriter({})
 
-            writerExport.pipe(fs.createWriteStream('neworders.csv'));
+//            writerExport.pipe(fs.createWriteStream('neworders.csv'));
 
-            data.map((i)=>{
-                let count = 0;
-                i.arr.map((a, index)=>{
-                    index++;
-                    count++;
-                    // loop over keys and values
-                    Object.entries(a).forEach(([key, value]) => {
-                         i[`${key} - ${index}`] = value;
-                    });
+//            data.map((i)=>{
+//                let count = 0;
+//                i.arr.map((a, index)=>{
+//                    index++;
+//                    count++;
+//                    // loop over keys and values
+//                    Object.entries(a).forEach(([key, value]) => {
+//                         i[`${key} - ${index}`] = value;
+//                    });
+//
+//                });
+//                // console.log('count', count);
+//                delete i.arr;
+//            });
 
-                });
-                // console.log('count', count);
-                delete i.arr;
-            });
 
-
-            /*Change arr*/
-            var changeArray = data.map((item, index) => ({
-                'First Name': item['First Name'],
-                'Last Name': item['Last Name'],
-                'Email Address': item['Email'],
-                'Company': item['Company'],
-                'Phone': item['Phone'],
-                'Notes': item['Note']
-
-            }))
-
-            /*Write CSV*/
-            data.map((el)=>{
-                writerExport.write(el);
-            })
+//            /*Change arr*/
+//            var changeArray = data.map((item, index) => ({
+//                'First Name': item['First Name'],
+//                'Last Name': item['Last Name'],
+//                'Email Address': item['Email'],
+//                'Company': item['Company'],
+//                'Phone': item['Phone'],
+//                'Notes': item['Note']
+//
+//            }))
+//
+//            /*Write CSV*/
+//            data.map((el)=>{
+//                writerExport.write(el);
+//            })
 
         });
     }
