@@ -32,14 +32,7 @@ app.post('/', (req, res) =>{
                         var found = false;
 
                         for (var i = 0; i < arr.length; i++) {
-                            // console.log('item.Email', item.Email)
-                            // if(item.Email === '') {
-                            //
-                            //     console.log('no Email')
-                            //     console.log('item.Email', JSON.stringify(item));
-                            //     logger.info(`Request returned error code:${JSON.stringify(item)}`);
-                            //     return ;
-                            // }
+                            console.log("arr[i].Handle", arr[i])
                             if (arr[i].Handle === item.Handle) {
                                 found = true;
                                 arr[i].count++;
@@ -78,44 +71,48 @@ app.post('/', (req, res) =>{
                 if(element.count > 1) {
                     productsBigCommerce.push({
                         'name': element['Title'],
+                        'sku': element['Handle'],
                         'price': element['Variant Price'],
                         'weight': element['Variant Grams'],
                         'type': 'physical',
-                        'variants': element['variants']
+                        'variants': element['variants'],
+                        'description': element['Body (HTML)'],
+                        'brand_name': element['Vendor'],
+                        "images": [
+                            {
+                              "image_url": element['Image Src']
+                            }
+                        ]
                     })
                 } else {
                     productsBigCommerce.push({
                         'name': element['Title'],
                         'price': element['Variant Price'],
+                        'sku': element['Handle'],
                         'weight': element['Variant Grams'],
-                        'type': 'physical'
+                        'type': 'physical',
+                        'description': element['Body (HTML)'],
+                        'brand_name': element['Vendor'],
+                        "images": [
+                            {
+                              "image_url": element['Image Src']
+                            }
+                        ]
                     })
                 }
             })
             //
             console.log('productsBigCommerce', productsBigCommerce);
-           // console.log('changeArray', changeArray);
-
 
         }).then((value)=>{
-            // console.log('productsBigCommerce', productsBigCommerce);
+
             productsBigCommerce.map((lineItem)=>{
-                // console.log('line', lineItem);
+                //console.log('line', lineItem);
                 bigCommerce.post(`/catalog/products`, lineItem)
                     .then((data) => {
                         console.log('data order', data);
                     })
             })
-            // let lineItem = {
-            //     "name": "BigCommerce Coffee Mug222",
-            //     "price": "10.00",
-            //     "weight": 4,
-            //     "type": "physical"
-            // }
-            // bigCommerce.post(`/catalog/products`, lineItem)
-            //     .then((data) => {
-            //         console.log('data order', data);
-            //     })
         })
     }
     res.sendFile(__dirname + '/completion.html');
